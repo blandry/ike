@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block body_content %}
+
+  <div class="left-links">
+  	<a href="{{ url_for('index') }}" id="logo">
+  	<!--<img id="logopic" src="static/img/logo3.svg" />-->
+  	<span></span>
+  	</a>
+  </div>
+  <div class="left-links-upper">
+    {% if current_user.is_authenticated() %}<a href="{{ url_for('my_trips') }}" id="nav">My trips</a><a href="{{ url_for('logout') }}" id="nav">Logout</a>
+    {% else %}<a href="{{ url_for('login') }}" id="nav">Login</a><a href="{{ url_for('register') }}" id="nav">Sign up</a>{% endif %}
+  </div>
+
+{% block search_content %}{% endblock %}
+{% endblock %}

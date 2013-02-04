@@ -1,0 +1,374 @@
+<div class="container" style="padding-top: 100px;">
+  <div class="row">
+    <div class="span2">
+      <ul class="nav nav-tabs nav-stacked" id="days-nav">
+	<li class="active"><a href="#overview-tab" data-toggle="tab">Overview</a></li>
+	{% for corridor in corridors %}
+	<li><a href="#corridor-tab-{{ loop.index }}" data-toggle="tab" lat="{{ corridor.locations[0].lat }}" lng="{{ corridor.locations[0].lng }}">Night {{ loop.index }}</a></li>
+	{% endfor %}
+      </ul>
+    </div>
+    <div class="span5">
+      <div class="tab-content">
+	<div class="tab-pane active" id="overview-tab">
+	  <div id="instructions-0" class="instructions hide" corridor-id="0">
+	    <p class="results_message">Click on each night to build your trip.</p>
+          </div>
+	  <div class="hide" id="trip-data" 
+	       start_lat="{{ directions.start_location.lat }}" 
+	       start_lng="{{ directions.start_location.lng }}" 
+	       overview_polyline="{{ directions.polyline }}"
+	       start_address="{{ directions.start_address }}"
+	       end_address="{{ directions.end_address }}">
+	    <div id="polylines-data">
+	      {% for step in directions.steps %}
+	      <div class="polyline" points="{{ step.polyline }}"></div>
+	      {% endfor %}
+	    </div>	  
+	  </div>
+	  <h1>Duration:</h1><p><small>{{ directions.formatted_duration }}</small></p>
+	  <h1>Starting location:</h1><p><small>{{ directions.start_address }}</small></p>
+	  <h1>Destination:</h1><p><small>{{ directions.end_address }}</small></p>
+	</div>
+	{% for corridor in corridors %}
+	<div class="corridor tab-pane" id="corridor-tab-{{ loop.index }}" polyline="{{ corridor.polyline }}" index="{{ loop.index }}">
+	  <div id="instructions-{{ loop.index }}" class="instructions hide" corridor-id="{{ loop.index }}">
+	    {% if corridor.has_hotels %}
+	    <p class="results_message">First, choose your hotel for the night.</p>
+	    <a href="#" class="skip-hotel" corridor-id="{{ loop.index }}"><p>I don't need a hotel.</p></a>
+	    {% else %}
+	    <p class="results_message">We could not find any hotels for this night.</p>
+	    {% endif %}
+	  </div>
+	  <div id="hotels-{{ loop.index }}">
+	    {% for hotel in corridor.hotels %}
+	    <div id="hotel-{{ hotel.id }}" class="hotel alert alert-info" hotel-id="{{ hotel.id }}" lat="{{ hotel.lat }}" lng="{{ hotel.lng }}" letter="{{ loop.index0 }}">
+	      <a class="close {% if loop.length < 2 %}hide{% endif %}" data-dismiss="alert" href="#">&times;</a>
+	      <img class="hotel-marker" /><h2>{{ hotel.name }}</h2><p>${{ hotel.price }}</p>
+	      <p><span class="stars">{{ hotel.stars }}</span></p>
+	      <p>{{ hotel.address }}</p>
+	      <p><a class="daysite" href="{{ hotel.url }}">Website</a></p>
+	      <button class="choose-button" hotel-id="{{ hotel.id }}">Choose</button>
+	    </div>
+	    {% endfor %}
+	    {% if not corridor.has_hotels %}
+	    <h3 style='text-align:center; padding-top:50px;'>No results.</h3>
+	    {% endif %}
+	  </div>
+	  <div id="diner-{{ loop.index }}" class="diners hide">
+	  </div>
+	  <div id="breakfast-{{ loop.index }}" class="breakfasts hide">
+	  </div>
+	</div>
+	{% endfor %}
+      </div>
+    </div>
+    <div class="span5">
+      <div class="row">
+	<div class="span5">
+	  <div id="map_canvas"></div>
+	</div>
+      </div>
+      <div class="row">
+	<div class="span5">
+	  <div id="displayed-instructions" class="instructions">
+	    <p class="results_message">Click on each night to build your trip.</p>
+	  </div>
+	</div>
+      </div>
+    </div>
+  </div>
+</div>
+<script>
+$(document).ready(function(){
+    var mapOptions = {
+        center: new google.maps.LatLng(44.58, -103.46),
+        zoom: 3,
+        mapTypeId: google.maps.MapTypeId.ROADMAP
+    };
+    var map = new google.maps.Map(document.getElementById("map_canvas"), mapOptions);
+    $("#polylines-data").children(".polyline").each(function(){
+        var polyline = $(this).attr("points");
+        var decodedPolyline = google.maps.geometry.encoding.decodePath(polyline);
+        var directions = new google.maps.Polyline({
+            path: decodedPolyline,
+            strokeColor: "#84B0F4",
+            strokeOpacity: 0.75,
+            strokeWeight: 5
+        });
+        directions.setMap(map);
+    });
+    var done = false;
+    var letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    var corridors = Object();
+    var skipped_hotels = Object();
+    var skipped_diners = Object();
+    var skipped_breakfasts = Object();
+    $(".corridor").each(function(){
+        if ($(this).find(".hotel").length>0){
+            corridors[$(this).attr("id")] = false;
+        };
+        skipped_hotels[$(this).attr("index")] = false;
+        skipped_diners[$(this).attr("index")] = false;
+        skipped_breakfasts[$(this).attr("index")] = false;
+        var polyline = $(this).attr("polyline");
+        var decodedPolyline = google.maps.geometry.encoding.decodePath(polyline);
+        var corridor = new google.maps.Polyline({
+            path: decodedPolyline,
+            strokeColor: "#FF0000",
+            strokeOpacity: 0.75,
+            strokeWeight: 10
+        });
+        corridor.setMap(map);
+        $(this).find(".hotel").each(function(){
+            var hotelId = $(this).attr("hotel-id");
+            var lat = parseFloat($(this).attr("lat"));
+            var lng = parseFloat($(this).attr("lng"));
+            var loc = new google.maps.LatLng(lat, lng);
+            var letter = letters.charAt(parseInt($(this).attr("letter")));
+            var iconUrl = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+letter+"|84B0F4|FFFFFF";
+            var marker = new google.maps.Marker({
+                position: loc, 
+                icon: iconUrl
+            });
+            marker.setMap(map);
+            $(this).bind('closed', function () {
+                marker.setMap(null);
+                var hotels = $(this).parents(".corridor").eq(0).find(".hotel");
+                if (hotels.length<=2){
+                    hotels.each(function(){
+                        $(this).find(".close").eq(0).hide();
+                    });
+                };
+            });
+            $(this).find(".hotel-marker").eq(0).attr("src", iconUrl);
+        });
+    });
+    $("#days-nav li a").each(function(){
+        $(this).click(function(){
+            if ($(this).attr("href")=="#overview-tab"){
+                var newCenter = new google.maps.LatLng(44.58, -103.46);
+                var newZoom = 3;
+            } else {
+                var newCenter = new google.maps.LatLng(parseFloat($(this).attr("lat")), parseFloat($(this).attr("lng")));
+                var newZoom = 9;
+            };
+            map.setCenter(newCenter);
+            map.setZoom(newZoom);
+            if (!(done)){
+                var instructions = $($(this).attr("href")).find(".instructions").eq(0).html();
+                $("#displayed-instructions").html(instructions);
+                $("#displayed-instructions").find(".skip-hotel").eq(0).click(function(){
+                    skippedCorridorId = $(this).attr("corridor-id");
+                    skipped_hotels[skippedCorridorId] = true;
+                    $("#corridor-tab-"+skippedCorridorId).find(".hotel").eq(0).find(".choose-button").eq(0).click();
+                });
+                $("#displayed-instructions").find(".skip-diner").eq(0).click(function(){
+                    skippedCorridorId = $(this).attr("corridor-id");
+                    skipped_diners[skippedCorridorId] = true;
+                    $("#corridor-tab-"+skippedCorridorId).find(".diners").eq(0).find(".restaurant").eq(0).find(".choose-restaurant-button").eq(0).click();
+                });
+                $("#displayed-instructions").find(".skip-breakfast").eq(0).click(function(){
+                    skippedCorridorId = $(this).attr("corridor-id");
+                    skipped_breakfasts[skippedCorridorId] = true;
+                    $("#corridor-tab-"+skippedCorridorId).find(".breakfasts").eq(0).find(".restaurant").eq(0).find(".choose-restaurant-button").eq(0).click();
+                });
+            };
+        });
+    });
+    $(".choose-button").each(function(){
+        $(this).click(function(){
+            var chosenHotelId = $(this).attr("hotel-id");
+            var corridor = $(this).parents(".corridor").eq(0);
+            corridor.find(".hotel").each(function(){
+                if ($(this).attr("hotel-id")!=chosenHotelId){
+                    $(this).alert("close");
+                } else {
+                    $(this).hide();
+	            $(this).find(".close").eq(0).detach();
+                };
+            });
+            $(this).detach();
+            $.ajax({
+                type: "POST",
+                url: "/ajax/restaurant-search",
+                data: "hotel_id="+chosenHotelId,
+                success: function(data) {
+                    corridor.find(".diners").eq(0).html(data);
+                    corridor.find(".breakfasts").eq(0).html(data);
+                    corridor.find(".diners").eq(0).find(".stars").each(function(){
+                        $(this).stars();
+                    });
+                    corridor.find(".breakfasts").eq(0).find(".stars").each(function(){
+                        $(this).stars();
+                    });
+                    corridor.find(".instructions").eq(0).html("<p>Next, choose where you'd like to eat dinner.</p><a href='#' class='skip-diner' corridor-id='"+corridor.attr("index")+"'><p>I don't need dinner.</p></a>");
+                    if (corridor.find(".restaurant").length<2){
+                        corridors[corridor.attr("id")] = true;
+                        corridor.find(".instructions").eq(0).html("<p>We could not find any restaurants in this area.</p>");
+		        corridor.find(".diners").eq(0).html("<h3 style='text-align:center; padding-top:50px;'>No results.</h3>");
+                    };
+                    $("#displayed-instructions").html(corridor.find(".instructions").eq(0).html());
+                    $("#displayed-instructions").find(".skip-diner").eq(0).click(function(){
+                        skippedCorridorId = $(this).attr("corridor-id");
+                        skipped_diners[skippedCorridorId] = true;
+                        $("#corridor-tab-"+skippedCorridorId).find(".diners").eq(0).find(".restaurant").eq(0).find(".choose-restaurant-button").eq(0).click();
+                    });
+                    corridor.find(".diners").eq(0).fadeIn(800);
+                    corridor.find(".diners").eq(0).find(".restaurant").each(function(){                    
+                        var lat = parseFloat($(this).attr("lat"));
+                        var lng = parseFloat($(this).attr("lng"));
+                        var loc = new google.maps.LatLng(lat, lng);
+                        var letter = letters.charAt(parseInt($(this).attr("letter")));
+                        var iconUrl = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+letter+"|C09853|FFFFFF";
+                        var marker = new google.maps.Marker({
+                            position: loc,
+                            icon: iconUrl
+                        });
+                        marker.setMap(map);
+                        $(this).find(".restaurant-marker").eq(0).attr("src", iconUrl);
+                        $(this).bind('closed', function () {
+                            marker.setMap(null);
+                            var restaurants = $(this).parents(".diners").eq(0).find(".restaurant");
+                            if (restaurants.length<=2){
+                                restaurants.each(function(){
+                                    $(this).find(".close").eq(0).hide();
+                                });
+                            };
+                        });
+                        $(this).find(".choose-restaurant-button").eq(0).click(function(){
+                            var chosenRestaurantId = $(this).attr("restaurant-id");
+                            var diners = $(this).parents(".diners").eq(0);
+                            diners.find(".restaurant").each(function(){
+                                if ($(this).attr("restaurant-id")!=chosenRestaurantId){
+                                    $(this).alert("close");
+                                } else {
+                                    $(this).hide();
+                                    $(this).find(".close").eq(0).detach();
+                                };
+                            });
+                            $(this).detach();
+                            corridor.find(".instructions").eq(0).html("<p>Now, choose your breakfast for the next morning.</p><a href='#' class='skip-breakfast' corridor-id='"+corridor.attr("index")+"'><p>I don't need breakfast.</p></a>");
+                            $("#displayed-instructions").html(corridor.find(".instructions").eq(0).html());
+                            $("#displayed-instructions").find(".skip-breakfast").eq(0).click(function(){
+                                skippedCorridorId = $(this).attr("corridor-id");
+                                skipped_breakfasts[skippedCorridorId] = true;
+                                $("#corridor-tab-"+skippedCorridorId).find(".breakfasts").eq(0).find(".restaurant").eq(0).find(".choose-restaurant-button").eq(0).click();
+                            });
+                            corridor.find(".breakfasts").fadeIn(800);
+                            corridor.find(".breakfasts").eq(0).find(".restaurant").each(function(){
+                                var lat = parseFloat($(this).attr("lat"));
+                                var lng = parseFloat($(this).attr("lng"));
+                                var loc = new google.maps.LatLng(lat, lng);
+                                var letter = letters.charAt(parseInt($(this).attr("letter")));
+                                var iconUrl = "http://chart.apis.google.com/chart?chst=d_map_pin_letter&chld="+letter+"|FFF000|000000";
+                                var marker = new google.maps.Marker({
+                                    position: loc,
+                                    icon: iconUrl
+                                });
+                                marker.setMap(map);
+                                $(this).find(".restaurant-marker").eq(0).attr("src", iconUrl);
+                                $(this).bind('closed', function () {
+                                   marker.setMap(null);
+				   var restaurants = $(this).parents(".breakfasts").eq(0).find(".restaurant");
+                                   if (restaurants.length<=2){
+                                       restaurants.each(function(){
+                                           $(this).find(".close").eq(0).hide();
+                                       });
+                                   };
+                                });
+                                $(this).find(".choose-restaurant-button").eq(0).click(function(){
+                                    var chosenRestaurantId = $(this).attr("restaurant-id");
+                                    var breakfasts = $(this).parents(".breakfasts").eq(0);
+                                    breakfasts.find(".restaurant").each(function(){
+                                        if ($(this).attr("restaurant-id")!=chosenRestaurantId){
+                                            $(this).alert("close");
+                                        } else {
+                                            $(this).hide();
+                                            $(this).find(".close").eq(0).detach();
+                                        };
+                                    });
+                                    $(this).detach();
+                                    corridor.find(".instructions").eq(0).html("<p>Navigate to another night to continue building your itinerary.</p>");
+                                    $("#displayed-instructions").html(corridor.find(".instructions").eq(0).html());
+                                    var delay = 0;
+                                    if (!skipped_hotels[corridor.attr("index")]) {
+                                        corridor.find(".hotel").eq(0).fadeIn(800);
+                                        delay += 400;
+                                    };
+                                    if (!skipped_diners[corridor.attr("index")]) {
+                                        corridor.find(".diners").eq(0).find(".restaurant").eq(0).delay(delay).fadeIn(800);
+                                        delay += 400;
+                                    };
+                                    if (!skipped_breakfasts[corridor.attr("index")]) {
+                                        corridor.find(".breakfasts").eq(0).find(".restaurant").eq(0).delay(delay).fadeIn(800);
+                                    };
+                                    corridors[corridor.attr("id")] = true;
+                                    done = true;
+                                    for (var id in corridors){
+                                       if (corridors[id]==false){
+                                           done=false;
+                                       };
+                                    };
+                                    if (done){
+                                        var doneForm = "<p>Name your trip:</p><input type='text' id='trip-name'/><div><button id='done-button' class='hide'>Done</button></div>";
+                                        $("#displayed-instructions").html(doneForm);
+                                        $("#trip-name").keyup(function() {
+                                            if ($.trim($(this).val()).length!=0){
+                                                $("#done-button").fadeIn(200);
+                                            } else {
+                                                $("#done-button").fadeOut(200);
+                                            }
+                                        });
+                                        $("#done-button").click(function(){
+                                            var choices = Object();
+                                            $(".corridor").each(function(){
+                                                var choice = Object();
+                                                if ($(this).find(".hotel").length>0 && !skipped_hotels[$(this).attr("index")]){
+                                                    choice["hotel"] = $(this).find(".hotel").eq(0).attr("hotel-id");
+						} else {
+						    choice["hotel"] = "None";
+						};
+						if ($(this).find(".diners").eq(0).find(".restaurant").length>0  && !skipped_diners[$(this).attr("index")]){
+						    choice["diner"] = $(this).find(".diners").eq(0).find(".restaurant").eq(0).attr("restaurant-id");
+					        } else {
+				                    choice["diner"] = "None";
+                                                };
+                                                if ($(this).find(".breakfasts").eq(0).find(".restaurant").length>0  && !skipped_breakfasts[$(this).attr("index")]){
+                                                    choice["breakfast"] = $(this).find(".breakfasts").eq(0).find(".restaurant").eq(0).attr("restaurant-id");
+				                } else {
+				                    choice["breakfast"] = "None";
+				                };
+                                                choices[$(this).attr("index")] = choice;
+                                            });
+                                            var tripData = "name="+$.trim($("#trip-name").val())+"&start_address="+$("#trip-data").attr("start_address")+"&end_address="+$("#trip-data").attr("end_address");
+                                            $.ajax({
+                                                type: "POST",
+                                                url: "/ajax/generate-trip",
+                                                data: tripData+"&json="+JSON.stringify(choices),
+                                                dataType: "json",
+                                                success: function(data) {
+                                                    document.location.href = data.url;
+                                                },
+                                                error: function(data) {
+                                                    alert("There was an error...");
+                                                }
+                                            });
+                                        });
+                                    };
+                                });
+                            });
+                        });
+                    });
+                },
+                error: function(data) {
+                    alert("Your search was not successful.");
+                }
+            });
+        });
+    });
+    $(".stars").each(function() {
+        $(this).stars();
+    });
+});
+</script>

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+
+{% block body_content %}    
+  <div class="row-fluid">
+    <div class="span5">
+      <div class="homepage-unit-left">
+	<img id="logohome" src="static/img/logo3.svg" />
+	<p>Sign up to save your itineraries for later.</p>
+      </div>
+    </div>
+    <div class="span7">
+      <form action="{{ url_for('register') }}" method="POST">
+	<div class="row-fluid">
+	  <div class="signup-unit-upper">
+	  	<div id="signup-forms">
+	    	<div class="row-fluid">
+	      		<p>Email</p>
+	      		{{ forms.input(form.email) }}
+	    	</div>
+	    	<div class="row-fluid">
+	      		<div class="span5">
+					<p>Password</p>
+					{{ forms.input(form.password) }}
+	      		</div>
+	      		<div class="span7">
+					<p>Again</p>
+					{{ forms.input(form.confirm) }}
+	      		</div>
+	    	</div>
+	    </div> 
+	  </div>
+	</div>
+	<div class="row-fluid">
+	  <div class="signup-unit-lower">
+	    <button type="submit">Sign up</button>
+	  </div>
+	</div>
+	{{ form.hidden_tag() }}
+      </form>
+    </div>
+  </div>
+{% endblock %}

@@ -1,0 +1,8 @@
+{% for restaurant in restaurants %}
+<div class="restaurant alert" restaurant-id="{{ restaurant.id }}" lat="{{ restaurant.lat }}" lng="{{ restaurant.lng }}" letter="{{ loop.index0 }}">
+  <a class="close" data-dismiss="alert" href="#">&times;</a>
+  <img class="restaurant-marker" /><h3>{{ restaurant.name }} </h3><p><span class="stars">{{ restaurant.rating }}</span></p>
+  <p>{{ restaurant.address }}</p>
+  <button class="choose-restaurant-button" restaurant-id="{{ restaurant.id }}">Choose</button>
+</div>
+{% endfor %}

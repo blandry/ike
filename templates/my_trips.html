@@ -1,0 +1,41 @@
+{% extends 'search_base.html' %}
+
+{% block search_content %}
+<div class="container" style="padding-top: 100px;">
+  <div class="row">
+    <div class="span3">
+      <a class="password_link" id="pw_link" href="{{ url_for('change_password') }}">Change password</a>
+    </div>
+    <div class="span9">
+      <div class="row">
+    	<div id="my_trips_title">
+    	  Saved itineraries
+    	</div>
+      </div>
+      <div id="trips">
+	{% for trip in trips %}
+      <div class="saved alert alert-info fade in" trip-id="{{ trip.id }}">
+	  <a class="close" data-dismiss="alert" href="#">&times;</a>
+	  <span>Created on: </span><span id="save_date">{{ trip.creation_time.date() }}</span>
+	  <p><a class="trip_title" id="title" href="{{ url_for('trip_overview',id=trip.id) }}">{{ trip.name }}</a></p>
+	</div>
+	{% endfor %}
+      </div>    
+    </div>
+  </div>
+</div>
+<script>
+$(document).ready(function(){
+    $(".saved").each(function(){
+        $(this).bind('closed', function() {
+            tripId = $(this).attr("trip-id");
+            $.ajax({
+                type: "GET",
+                url: "/remove-trip/"+tripId
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+

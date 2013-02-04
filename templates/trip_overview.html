@@ -1,0 +1,86 @@
+{% extends 'search_base.html' %}
+
+{% block search_content %}
+<div class="container" style="padding-top: 10px;">
+  <div class="row">
+    <div class="span12">
+      <div class="row">
+    	<div id="final_itinerary_title">
+    		<div><input class="print_button" type="button" onClick="window.print()" value="Print This Page"/></div>
+	  {% if current_user.is_authenticated() %}
+	  {% if not current_user in trip.users %}
+    	  <a href="{{ url_for('add_trip', id=trip.id) }}"><button class="add_to_trips">Add to my trips</button></a>
+	  {% else %}
+	  <div><p class="saved_date_title">Created on: {{ trip.creation_time.date() }}</p></div>
+	  {% endif %}
+	  {% else %}
+	  <a class="log_in_first" href="{{ url_for('login', next=url_for('trip_overview', id=trip.id)) }}"><p>Log in to save</p></a>
+	  {% endif %}
+    	</div>
+      </div>
+      <div class="final_trip">
+      	<p class="itinerary_name">{{ trip.name }}</p>
+    	<p class="daytitle"><span>{{ trip.start_address }}</span><span> to </span><span>{{ trip.end_address }}</span></p>
+	{% for night in trip.nights %}
+	{% if loop.first %}
+      	<div class="days">
+      	  <p class="daylabel">Day {{ loop.index }}</p>
+	  {% endif %}
+          <div class="hotelfinal">
+            <p class="daysublabel">Hotel</p>
+	    {% if night.hotel %}
+            <p class="dayname">{{ night.hotel.name }}</p>
+            <p class="rating"><span class="stars">{{ night.hotel.stars }}</span></p>
+            <p class="dayaddress">{{ night.hotel.address }}</p>
+            <p><span class="subsublabel">Price: </span><span class="subsubtext">${{ night.hotel.price }}</span></p>
+            <a class="daysite" href="{{ night.hotel.url }}">Website</a>
+	    {% else %}
+	    <p>No hotel chosen.</p>
+	    {% endif %}
+          </div>
+          <div class="dinner">
+            <p class="daysublabel">Dinner</p>
+            {% if night.diner_restaurant %}
+            <p class="dayname">{{ night.diner_restaurant.name }}</p>
+            <p class="rating"><span class="stars">{{ night.diner_restaurant.rating }}</span></p>
+            <p class="dayaddress">{{ night.diner_restaurant.address }}</p>
+	    {% else %}
+	    <p>No dinner restaurant chosen.</p>
+	    {% endif %}
+          </div>
+        </div>
+        <div class="days">
+          <p class="daylabel">Day {{ loop.index+1 }}</p>
+          <div class="breakfast">
+            <p class="daysublabel">Breakfast</p>
+            {% if night.breakfast_restaurant %}
+            <p class="dayname">{{ night.breakfast_restaurant.name }}</p>
+            <p class="rating"><span class="stars">{{ night.breakfast_restaurant.rating }}</span></p>
+            <p class="dayaddress">{{ night.breakfast_restaurant.address }}</p>
+	    {% else %}
+	    <p>No breakfast restaurant chosen.</p>
+	    {% endif %}
+          </div>
+	{% if loop.last %}
+	</div>
+	{% endif %}
+	{% endfor %}
+      </div>    
+    </div>
+  </div>
+</div>
+<script>
+$(document).ready(function(){
+    $.fn.stars = function() {
+        return $(this).each(function() {
+            var val = parseFloat($(this).html());
+            var size = Math.max(0, (Math.min(5, val))) * 16;
+            var $span = $('<span />').width(size);
+            $(this).html($span);
+        });
+    }
+    $('span.stars').stars();
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,13 @@
+# SERVER
+DEBUG = False
+SECRET_KEY = ""
+HOST_ADDRESS = ""
+DATABASE = ""
+SMTP_SETTINGS = {
+    "MAIL_SERVER": "",
+    "MAIL_PORT": 465,
+    "MAIL_USE_SSL": True,
+    "MAIL_USERNAME": "",
+    "MAIL_PASSWORD": "",
+    "DEFAULT_MAIL_SENDER": ("Ike", "")
+}

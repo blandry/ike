@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+
+{% block body_content %}
+  <div class="row-fluid">
+    <div class="span5">
+      <div class="homepage-unit-left">
+      <img id="logohome" src="static/img/logo3.svg" />
+	<!--<h1>Ike.</h1>-->
+	<p>Tell us where you want to go. We'll help you plan the way.</p>
+      </div>
+    </div>
+    <div class="span7">
+      <div class="row-fluid">
+	<div class="homepage-unit-upper">
+	  <a href="{{ url_for('quick_search') }}"><button>Get started</button></a>
+	</div>
+      </div>
+    <div class="row-fluid">
+	<div class="homepage-unit-lower">
+	  <form action="{{ url_for('login') }}" method="POST" id="login-form">
+	  <div id="login-forms">
+	  	<div class="row-fluid">
+	    <div class="span5">
+	      <p>Email</p>
+	      {{ forms.input(form.email) }}
+	    </div>
+	    <div class="span7">
+	      <p>Password</p>
+	      {{ forms.input(form.password) }}
+	    </div>
+	    </div>
+	    <div class="row-fluid"><button type="submit">Log in</button>
+	    <p><a href="{{ url_for('register') }}">Sign up</a></p></div>
+            {{ form.hidden_tag() }}
+      </div>
+	  </form>
+	</div>
+      </div>
+    </div>
+  </div>
+  <script>
+  $(document).ready(function() {
+      if (document.location.href.indexOf("next=")!=-1){
+          $("#login-form").attr("action", "");
+      };
+  });
+  </script>
+{% endblock %}

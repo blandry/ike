@@ -33,3 +33,10 @@ nosetests.xml
 .mr.developer.cfg
 .project
 .pydevproject
+
+# Data
+*.db
+*.pk
+
+# Virtual environments
+env

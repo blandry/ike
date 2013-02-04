@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<div class="container" style="padding-bottom: 50px;">
+  <head>
+    <title>{% block title %}Ike{% endblock %}</title>
+    <link href="/static/css/bootstrap.min.css" rel="stylesheet" media="screen">
+    <link href="/static/css/styles.css" rel="stylesheet" media="screen">
+    <link href="/static/css/jquery-ui-1.10.0.custom.min.css" rel="stylesheet" media="screen">
+    <link href="/static/css/benstyles.css" rel="stylesheet" media="screen">
+    <link href="/static/css/print.css" type="text/css" rel="stylesheet" media="print">
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/bootstrap.min.js"></script>
+    <script src="/static/js/alerts.js"></script>
+    <script src="/static/js/spin.js"></script>
+    <script src="/static/js/searches.js"></script>
+    <script src="/static/js/stars.js"></script>
+    <script src="/static/js/jquery-ui-1.10.0.custom.min.js"></script>
+    <script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key={{ settings.GOOGLE_API_KEY }}&libraries=geometry&sensor=false"></script>
+  </head>
+  <body>
+    <div id="alert" class="hide" 
+	 header="{% if alert %}{{ alert.header }}{% endif %}" 
+	 text="{% if alert %}{{ alert.text }}{% endif %}" 
+	 type="{% if alert %}{{ alert.type }}{% endif %}">
+    </div> 
+    {% import 'macros/forms.html' as forms %}
+
+    {% block body_content %}{% endblock %}
+  </body>
+  
+  <footer class="myfoot">
+  	<span class="footeratt">
+  		Background courtesy of U.S. Geological Survey | 
+  	</span>
+  	<span class="footeratt">
+  		Hotel information courtesy of hotelsbase.org | 
+  	</span>
+  	<span class="footeratt">
+  		Restaurant information courtesy of Google.com
+  	</span>
+  </footer>
+  
+  </div>
+</html>

@@ -1,0 +1,5 @@
+.search-nav { padding-top: 20px; }
+.search-nav .logo { font-family: inherit; font-weight: 200; font-size: 20pt; color: #7facf7; margin-left: 20px;}
+.search-nav ul { list-style:none; }
+.search-nav li { display: inline; margin-right: 20px; }
+.search-nav a { text-decoration: none; font-size: 15pt; color: #7facf7; font-weight: 150;}
